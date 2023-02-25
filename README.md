@@ -102,7 +102,7 @@ func main() {
 - [x] Create a new session
 - [x] Get a session
 - [x] Delete a session
-- [] Use concurrent map
+- [ ] Use concurrent map
 
 # License
 MIT License
