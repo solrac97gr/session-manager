@@ -14,7 +14,9 @@ var _ ISessionManager = (*SessionManager)(nil)
 
 // NewSessionManager is the constructor for session manager
 func NewSessionManager() *SessionManager {
-	return &SessionManager{}
+	return &SessionManager{
+		Sessions: make(map[string]ISession),
+	}
 }
 
 // Get a session by session id

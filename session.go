@@ -22,6 +22,10 @@ var _ ISession = (*Session)(nil)
 func NewSession(data map[string]interface{}) *Session {
 	sessionId := uuid.New().String()
 
+	if data == nil {
+		data = make(map[string]interface{})
+	}
+
 	return &Session{
 		ID:   sessionId,
 		Data: data,
