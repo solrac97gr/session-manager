@@ -29,7 +29,7 @@ func (sm *SessionManager) GetSession(sessionId string) (ISession, error) {
 func (sm *SessionManager) CreateSession() (ISession, error) {
 	session := NewSession(nil)
 	sm.Sessions[session.SessionId()] = session
-	return session, nil
+	return sm.Sessions[session.SessionId()], nil
 }
 
 // Destroy a session
