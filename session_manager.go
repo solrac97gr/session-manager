@@ -53,7 +53,7 @@ func (sm *SessionManager) DestroySession(sessionId string) error {
 	return nil
 }
 
-// SetDefaultSession sets the default session for not require session id for get a current session
+// SetAsDefaultSession sets the default session for not require session id for get a current session
 func (sm *SessionManager) SetAsDefaultSession(sessionId string) error {
 	sm.m.Lock()
 	defer sm.m.Unlock()
