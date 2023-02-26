@@ -38,7 +38,7 @@ func NewSession(data map[string]interface{}) *Session {
 		Data:           data,
 		m:              &sync.RWMutex{},
 		Active:         true,
-		ExpirationTime: time.Now().Add(time.Minute * 30),
+		ExpirationTime: time.Now().Add(time.Minute * 5),
 		Expired:        false,
 	}
 }

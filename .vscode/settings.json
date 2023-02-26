@@ -1,0 +1,6 @@
+{
+    "yaml.schemas": {
+        "file:///Users/carlos97gr/.vscode/extensions/atlassian.atlascode-3.0.2/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml",
+        "https://json.schemastore.org/github-workflow.json": "file:///Users/carlos97gr/Development/personal/session-manager/.github/workflows/workflows.yml"
+    }
+}
