@@ -98,11 +98,52 @@ func main() {
     }
 }
 ```
-# Work in progress
+## Example: Set a default session and get it
+```go
+package main
+
+import (
+    "fmt"
+    "net/http"
+
+    "github.com/solrac97gr/session-manager"
+)
+
+func main() {
+    user := struct{
+        Name string
+        Age int
+    }{
+        Name: "Solrac",
+        Age: 20,
+    }
+
+
+    sm := sessionmanager.NewSessionManager()
+    s,_:= sm.CreateSession()
+
+    s.Set("user", user)
+
+    // Set a default session
+    sm.SetAsDefaultSession(s.SessionId())
+
+    // Get a session
+    s,err := sm.GetDefaultSession()
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Println(s.Get("user"))
+}
+```
+
+# Work in progress and completed
 - [x] Create a new session
 - [x] Get a session
 - [x] Delete a session
-- [ ] Use concurrent map
+- [x] Use concurrent map
+- [ ] Add a session expiration time
+- [ ] Add a active indicator
 
 # License
 MIT License
