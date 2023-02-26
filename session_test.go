@@ -3,6 +3,7 @@ package sessionmanager_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	sessionmanager "github.com/solrac97gr/session-manager"
 )
@@ -187,6 +188,105 @@ func TestSession_SessionId(t *testing.T) {
 
 			if session.SessionId() == "" {
 				t.Error("Session ID is empty")
+			}
+		})
+	}
+}
+
+func TestSession_SetExpirationTime(t *testing.T) {
+	cases := map[string]struct {
+		data map[string]interface{}
+	}{
+		"empty": {
+			data: map[string]interface{}{},
+		},
+
+		"with data": {
+			data: map[string]interface{}{
+				"key": "value",
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			session := sessionmanager.NewSession(tc.data)
+			expected := time.Now().Add(80 * time.Minute)
+
+			session.SetExpirationTime(expected)
+
+			if session.ExpirationTime != expected {
+				t.Errorf("Session expiration time is not equal to expected expiration time. Expected: %v, Actual: %v", expected, session.ExpirationTime)
+			}
+		})
+	}
+}
+
+func TestSession_IsExpired(t *testing.T) {
+	cases := map[string]struct {
+		data    map[string]interface{}
+		expired bool
+	}{
+		"empty": {
+			data: map[string]interface{}{},
+		},
+
+		"with data": {
+			data: map[string]interface{}{
+				"key": "value",
+			},
+		},
+
+		"already expired": {
+			data: map[string]interface{}{
+				"key": "value",
+			},
+			expired: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			session := sessionmanager.NewSession(tc.data)
+			if tc.expired {
+				session.Expired = true
+				if !session.IsExpired() {
+					t.Error("Session is not expired")
+				}
+				return
+			}
+			session.SetExpirationTime(time.Now().Add(-80 * time.Minute))
+
+			if !session.IsExpired() {
+				t.Error("Session is not expired")
+			}
+		})
+	}
+}
+
+func TestSessionManager_IsActive(t *testing.T) {
+	cases := map[string]struct {
+		data map[string]interface{}
+	}{
+		"empty": {
+			data: map[string]interface{}{},
+		},
+
+		"with data": {
+			data: map[string]interface{}{
+				"key": "value",
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			sessionManager := sessionmanager.NewSessionManager()
+			s, _ := sessionManager.CreateSession()
+			s.Set("data", tc.data)
+
+			if !s.IsActive() {
+				t.Error("Session is not active")
 			}
 		})
 	}

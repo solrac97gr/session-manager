@@ -1,5 +1,7 @@
 package sessionmanager
 
+import "time"
+
 // ISessionManager is the interface for session manager
 type ISessionManager interface {
 	// Get a session by session id
@@ -16,6 +18,8 @@ type ISessionManager interface {
 	GetAllSessions() map[string]ISession
 	// DestroyAllSessions destroys all sessions
 	DestroyAllSessions() error
+	// SetAvoidExpired sets if session manager avoid expired sessions
+	SetAvoidExpired(avoidExpired bool)
 }
 
 // Session is the interface for session
@@ -28,4 +32,10 @@ type ISession interface {
 	Delete(key string) error
 	// Get session id
 	SessionId() string
+	// Set ExpirationTime
+	SetExpirationTime(expirationTime time.Time)
+	// IsExpired checks if session is expired
+	IsExpired() bool
+	// IsActive checks if session is active
+	IsActive() bool
 }

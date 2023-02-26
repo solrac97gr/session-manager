@@ -10,6 +10,7 @@ type SessionManager struct {
 	DefaultSession ISession
 	Sessions       map[string]ISession
 	m              *sync.RWMutex
+	AvoidExpired   bool
 }
 
 // Verify that SessionManager implements ISessionManager
@@ -18,8 +19,9 @@ var _ ISessionManager = (*SessionManager)(nil)
 // NewSessionManager is the constructor for session manager
 func NewSessionManager() *SessionManager {
 	return &SessionManager{
-		Sessions: make(map[string]ISession),
-		m:        &sync.RWMutex{},
+		Sessions:     make(map[string]ISession),
+		m:            &sync.RWMutex{},
+		AvoidExpired: false,
 	}
 }
 
@@ -28,6 +30,9 @@ func (sm *SessionManager) GetSession(sessionId string) (ISession, error) {
 	sm.m.RLock()
 	defer sm.m.RUnlock()
 	if session, ok := sm.Sessions[sessionId]; ok {
+		if sm.AvoidExpired && session.IsExpired() {
+			return nil, fmt.Errorf("Session ID %s is expired", sessionId)
+		}
 		return session, nil
 	}
 	return nil, fmt.Errorf("Session ID %s not found", sessionId)
@@ -58,6 +63,9 @@ func (sm *SessionManager) SetAsDefaultSession(sessionId string) error {
 	sm.m.Lock()
 	defer sm.m.Unlock()
 	if session, ok := sm.Sessions[sessionId]; ok {
+		if sm.AvoidExpired && session.IsExpired() {
+			return fmt.Errorf("Session ID %s is expired", sessionId)
+		}
 		sm.DefaultSession = session
 		return nil
 	}
@@ -70,6 +78,10 @@ func (sm *SessionManager) GetDefaultSession() (ISession, error) {
 	defer sm.m.RUnlock()
 	if sm.DefaultSession == nil {
 		return nil, fmt.Errorf("default session not set")
+	}
+
+	if sm.AvoidExpired && sm.DefaultSession.IsExpired() {
+		return nil, fmt.Errorf("default session is expired")
 	}
 	return sm.DefaultSession, nil
 }
@@ -91,4 +103,13 @@ func (sm *SessionManager) DestroyAllSessions() error {
 	defer sm.m.Unlock()
 	sm.Sessions = make(map[string]ISession)
 	return nil
+}
+
+// SetAvoidExpired sets the avoid expired flag
+//   - If avoid expired is true, the session manager will not return expired sessions
+//   - If avoid expired is false, the session manager will return expired sessions
+func (sm *SessionManager) SetAvoidExpired(avoidExpired bool) {
+	sm.m.Lock()
+	defer sm.m.Unlock()
+	sm.AvoidExpired = avoidExpired
 }
