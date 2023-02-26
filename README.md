@@ -2,7 +2,7 @@
 [![GoDoc](https://godoc.org/github.com/solrac97gr/session-manager?status.svg)](https://godoc.org/github.com/solrac97gr/session-manager)
 [![Go Report Card](https://goreportcard.com/badge/github.com/solrac97gr/session-manager)](https://goreportcard.com/report/github.com/solrac97gr/session-manager)
 ![Build workflow](https://github.com/solrac97gr/session-manager/actions/workflows/workflows.yml/badge.svg)
-[![codecov](https://codecov.io/gh/solrac97gr/session-manager/branch/master/graph/badge.svg)](https://codecov.io/gh/solrac97gr/session-manager)
+[![codecov](https://codecov.io/gh/solrac97gr/session-manager/branch/main/graph/badge.svg)](https://codecov.io/gh/solrac97gr/session-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This is a simple session manager for a go application. For example, you can use it to manage the user's login status.
