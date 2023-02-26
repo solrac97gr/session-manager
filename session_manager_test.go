@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	sessionmanager "github.com/solrac97gr/session-manager"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSessionManager_NewSessionManager(t *testing.T) {
@@ -17,8 +18,8 @@ func TestSessionManager_NewSessionManager(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			sessionManager := sessionmanager.NewSessionManager()
 
-			if sessionManager.Sessions != nil {
-				t.Error("Sessions is not nil")
+			if sessionManager.Sessions == nil {
+				t.Error("Sessions is nil")
 			}
 		})
 	}
@@ -185,4 +186,224 @@ func TestSessionManager_DestroySession(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSessionManager_DestroyAllSessions(t *testing.T) {
+	cases := map[string]struct {
+		sessions func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession
+		err      error
+	}{
+		"empty": {
+			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
+				return map[string]sessionmanager.ISession{}
+			},
+			err: nil,
+		},
+
+		"with data": {
+			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
+				return map[string]sessionmanager.ISession{
+					"id1": session,
+					"id2": session,
+				}
+			},
+			err: nil,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			sessionManager := sessionmanager.NewSessionManager()
+			sessionManager.Sessions = tc.sessions("id", sessionmanager.NewSession(nil))
+
+			err := sessionManager.DestroyAllSessions()
+
+			if err != nil && tc.err == nil {
+				t.Errorf("Unexpected error: %s", err)
+			}
+
+			if err == nil && tc.err != nil {
+				t.Errorf("Expected error: %s", tc.err)
+			}
+
+			if err != nil && tc.err != nil && err.Error() != tc.err.Error() {
+				t.Errorf("Expected error: %s, Actual error: %s", tc.err, err)
+			}
+
+			if tc.err == nil && len(sessionManager.Sessions) != 0 {
+				t.Errorf("Sessions not deleted")
+			}
+		})
+	}
+}
+
+func TestSessionManager_GetAllSessions(t *testing.T) {
+	cases := map[string]struct {
+		sessions       func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession
+		withNilSession bool
+		err            error
+	}{
+		"empty": {
+			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
+				return map[string]sessionmanager.ISession{}
+			},
+			err: nil,
+		},
+
+		"with data": {
+			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
+				return map[string]sessionmanager.ISession{
+					"id1": session,
+					"id2": session,
+				}
+			},
+			err: nil,
+		},
+
+		"nil session": {
+			sessions:       func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession { return nil },
+			withNilSession: true,
+			err:            nil,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			sessionManager := sessionmanager.NewSessionManager()
+
+			if tc.withNilSession {
+				sessionManager.Sessions = nil
+				t.Log(sessionManager.Sessions)
+				sessions := sessionManager.GetAllSessions()
+
+				if len(sessions) != 0 {
+					t.Errorf("Expected 0 sessions, Actual: %d", len(sessions))
+				}
+
+				return
+
+			}
+
+			sessionManager.Sessions = tc.sessions("id", sessionmanager.NewSession(nil))
+
+			sessions := sessionManager.GetAllSessions()
+
+			if tc.err == nil && len(sessions) != len(sessionManager.Sessions) {
+				t.Errorf("Sessions not found")
+			}
+		})
+	}
+}
+
+func TestSessionManager_SetAsDefaultSession(t *testing.T) {
+	cases := map[string]struct {
+		sessions func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession
+		id       func(session sessionmanager.ISession) string
+		err      error
+	}{
+		"empty": {
+			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
+				return map[string]sessionmanager.ISession{}
+			},
+			id:  func(session sessionmanager.ISession) string { return session.SessionId() },
+			err: errors.New("not found"),
+		},
+
+		"with data": {
+			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
+				return map[string]sessionmanager.ISession{
+					id: session,
+				}
+			},
+			id:  func(session sessionmanager.ISession) string { return session.SessionId() },
+			err: nil,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			sessionManager := sessionmanager.NewSessionManager()
+			s, err := sessionManager.CreateSession()
+			if err != nil {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			sessionManager.Sessions = tc.sessions(s.SessionId(), s)
+
+			err = sessionManager.SetAsDefaultSession(tc.id(s))
+
+			if err != nil && tc.err == nil {
+				t.Errorf("Unexpected error: %s", err)
+			}
+
+			if err == nil && tc.err != nil {
+				t.Errorf("Expected error: %s", tc.err)
+			}
+
+			if err != nil && tc.err != nil && err.Error() != tc.err.Error() {
+				assert.Contains(t, err.Error(), tc.err.Error())
+			}
+
+			if tc.err == nil && sessionManager.DefaultSession != s {
+				t.Errorf("Default session not set")
+			}
+		})
+	}
+}
+
+func TestSessionManager_GetDefaultSession(t *testing.T) {
+	cases := map[string]struct {
+		sessions func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession
+		id       func(s sessionmanager.ISession) string
+		err      error
+	}{
+		"empty": {
+			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
+				return map[string]sessionmanager.ISession{}
+			},
+			id:  func(s sessionmanager.ISession) string { return s.SessionId() },
+			err: errors.New("default session not set"),
+		},
+
+		"with data": {
+			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
+				return map[string]sessionmanager.ISession{
+					id: session,
+				}
+			},
+			id:  func(s sessionmanager.ISession) string { return s.SessionId() },
+			err: nil,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			sessionManager := sessionmanager.NewSessionManager()
+			s, err := sessionManager.CreateSession()
+			if err != nil {
+				t.Errorf("Unexpected error: %s", err)
+			}
+			sessionManager.Sessions = tc.sessions(s.SessionId(), s)
+
+			sessionManager.SetAsDefaultSession(s.SessionId())
+
+			session, err := sessionManager.GetDefaultSession()
+
+			if err != nil && tc.err == nil {
+				t.Errorf("Unexpected error: %s", err)
+			}
+
+			if err == nil && tc.err != nil {
+				t.Errorf("Expected error: %s", tc.err)
+			}
+
+			if err != nil && tc.err != nil && err.Error() != tc.err.Error() {
+				assert.Contains(t, err.Error(), tc.err.Error())
+			}
+
+			if tc.err == nil && session != s {
+				t.Errorf("Default session not set")
+			}
+		})
+	}
+
 }

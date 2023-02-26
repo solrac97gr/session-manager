@@ -8,6 +8,14 @@ type ISessionManager interface {
 	CreateSession() (ISession, error)
 	// Destroy a session
 	DestroySession(sessionId string) error
+	// SetDefaultSession sets the default session
+	SetAsDefaultSession(sessionId string) error
+	// GetDefaultSession gets the default session
+	GetDefaultSession() (ISession, error)
+	// GetAllSessions gets all sessions
+	GetAllSessions() map[string]ISession
+	// DestroyAllSessions destroys all sessions
+	DestroyAllSessions() error
 }
 
 // Session is the interface for session

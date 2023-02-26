@@ -6,7 +6,8 @@ import (
 
 // SessionManager is the struct implementation for session manager
 type SessionManager struct {
-	Sessions map[string]ISession
+	DefaultSession ISession
+	Sessions       map[string]ISession
 }
 
 // Verify that SessionManager implements ISessionManager
@@ -40,5 +41,37 @@ func (sm *SessionManager) DestroySession(sessionId string) error {
 		return fmt.Errorf("Session ID %s not found", sessionId)
 	}
 	delete(sm.Sessions, sessionId)
+	return nil
+}
+
+// SetDefaultSession sets the default session for not require session id for get a current session
+func (sm *SessionManager) SetAsDefaultSession(sessionId string) error {
+	if session, ok := sm.Sessions[sessionId]; ok {
+		sm.DefaultSession = session
+		return nil
+	}
+	return fmt.Errorf("Session ID %s not found", sessionId)
+}
+
+// GetDefaultSession gets the default session for not require session id
+func (sm *SessionManager) GetDefaultSession() (ISession, error) {
+	if sm.DefaultSession == nil {
+		return nil, fmt.Errorf("default session not set")
+	}
+	return sm.DefaultSession, nil
+}
+
+// GetAllSessions gets all sessions stored in session manager
+func (sm *SessionManager) GetAllSessions() map[string]ISession {
+	if sm.Sessions == nil {
+		sm.Sessions = make(map[string]ISession)
+	}
+	return sm.Sessions
+}
+
+// DestroyAllSessions destroys all sessions stored in session manager
+//   - Important: this method never fails, but in future it can be changed
+func (sm *SessionManager) DestroyAllSessions() error {
+	sm.Sessions = make(map[string]ISession)
 	return nil
 }
