@@ -28,11 +28,12 @@ func TestSessionManager_NewSessionManager(t *testing.T) {
 
 func TestSessionManager_GetSession(t *testing.T) {
 	cases := map[string]struct {
-		sessions func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession
-		id       string
-		injected sessionmanager.ISession
-		expected *sessionmanager.Session
-		err      error
+		sessions     func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession
+		id           string
+		injected     sessionmanager.ISession
+		expected     *sessionmanager.Session
+		err          error
+		avoidExpired bool
 	}{
 		"empty": {
 			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
@@ -61,17 +62,18 @@ func TestSessionManager_GetSession(t *testing.T) {
 					id: session,
 				}
 			},
-			id:       "id",
-			injected: sessionmanager.NewSession(nil),
-			err:      errors.New("Session ID id is expired"),
-			expected: nil,
+			id:           "id",
+			injected:     sessionmanager.NewSession(nil),
+			err:          errors.New("Session ID id is expired"),
+			expected:     nil,
+			avoidExpired: true,
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			sessionManager := sessionmanager.NewSessionManager()
-			sessionManager.SetAvoidExpired(true)
+			sessionManager.SetAvoidExpired(tc.avoidExpired)
 
 			sessionManager.Sessions = tc.sessions(tc.id, tc.injected)
 
@@ -318,9 +320,10 @@ func TestSessionManager_GetAllSessions(t *testing.T) {
 
 func TestSessionManager_SetAsDefaultSession(t *testing.T) {
 	cases := map[string]struct {
-		sessions func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession
-		id       func(session sessionmanager.ISession) string
-		err      error
+		sessions     func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession
+		id           func(session sessionmanager.ISession) string
+		err          error
+		avoidExpired bool
 	}{
 		"empty": {
 			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
@@ -339,11 +342,24 @@ func TestSessionManager_SetAsDefaultSession(t *testing.T) {
 			id:  func(session sessionmanager.ISession) string { return session.SessionId() },
 			err: nil,
 		},
+		"with data and expired session": {
+			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
+				session.(*sessionmanager.Session).SetExpirationTime(time.Now().Add(-10 * time.Minute))
+				return map[string]sessionmanager.ISession{
+					id: session,
+				}
+			},
+			id:           func(session sessionmanager.ISession) string { return session.SessionId() },
+			err:          errors.New("is expired"),
+			avoidExpired: true,
+		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			sessionManager := sessionmanager.NewSessionManager()
+			sessionManager.SetAvoidExpired(tc.avoidExpired)
+
 			s, err := sessionManager.CreateSession()
 			if err != nil {
 				t.Errorf("Unexpected error: %s", err)
@@ -351,12 +367,14 @@ func TestSessionManager_SetAsDefaultSession(t *testing.T) {
 			sessionManager.Sessions = tc.sessions(s.SessionId(), s)
 
 			err = sessionManager.SetAsDefaultSession(tc.id(s))
+			t.Log(err)
 
 			if err != nil && tc.err == nil {
 				t.Errorf("Unexpected error: %s", err)
 			}
 
 			if err == nil && tc.err != nil {
+
 				t.Errorf("Expected error: %s", tc.err)
 			}
 
@@ -373,9 +391,10 @@ func TestSessionManager_SetAsDefaultSession(t *testing.T) {
 
 func TestSessionManager_GetDefaultSession(t *testing.T) {
 	cases := map[string]struct {
-		sessions func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession
-		id       func(s sessionmanager.ISession) string
-		err      error
+		sessions     func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession
+		id           func(s sessionmanager.ISession) string
+		err          error
+		avoidExpired bool
 	}{
 		"empty": {
 			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
@@ -397,7 +416,7 @@ func TestSessionManager_GetDefaultSession(t *testing.T) {
 
 		"with data and expired session": {
 			sessions: func(id string, session sessionmanager.ISession) map[string]sessionmanager.ISession {
-				session.(*sessionmanager.Session).SetExpirationTime(time.Now().Add(-1 * time.Second))
+				session.(*sessionmanager.Session).SetExpirationTime(time.Now().Add(-10 * time.Minute))
 
 				return map[string]sessionmanager.ISession{
 					id: session,
@@ -406,14 +425,14 @@ func TestSessionManager_GetDefaultSession(t *testing.T) {
 			id: func(s sessionmanager.ISession) string {
 				return s.SessionId()
 			},
-			err: errors.New("default session not set"),
+			err:          errors.New("default session is expired"),
+			avoidExpired: true,
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			sessionManager := sessionmanager.NewSessionManager()
-			sessionManager.SetAvoidExpired(true)
 			s, err := sessionManager.CreateSession()
 			if err != nil {
 				t.Errorf("Unexpected error: %s", err)
@@ -422,8 +441,9 @@ func TestSessionManager_GetDefaultSession(t *testing.T) {
 
 			sessionManager.SetAsDefaultSession(s.SessionId())
 
-			session, err := sessionManager.GetDefaultSession()
+			sessionManager.SetAvoidExpired(tc.avoidExpired)
 
+			session, err := sessionManager.GetDefaultSession()
 			if err != nil && tc.err == nil {
 				t.Errorf("Unexpected error: %s", err)
 			}
@@ -437,6 +457,10 @@ func TestSessionManager_GetDefaultSession(t *testing.T) {
 			}
 
 			if tc.err == nil && session != s {
+				t.Errorf("Default session not set")
+			}
+
+			if tc.err == nil && sessionManager.DefaultSession != s {
 				t.Errorf("Default session not set")
 			}
 		})
