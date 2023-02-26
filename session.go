@@ -3,6 +3,7 @@ package sessionmanager
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/google/uuid"
 )
@@ -13,6 +14,7 @@ import (
 type Session struct {
 	ID   string
 	Data map[string]interface{}
+	m    *sync.RWMutex
 }
 
 // Verify that Session implements ISession
@@ -29,11 +31,14 @@ func NewSession(data map[string]interface{}) *Session {
 	return &Session{
 		ID:   sessionId,
 		Data: data,
+		m:    &sync.RWMutex{},
 	}
 }
 
 // Get a value from session
 func (s *Session) Get(key string) (interface{}, error) {
+	s.m.RLock()
+	defer s.m.RUnlock()
 	if _, ok := s.Data[key]; !ok {
 		return nil, errors.New("key not found")
 	}
@@ -42,6 +47,8 @@ func (s *Session) Get(key string) (interface{}, error) {
 
 // Set a value to session
 func (s *Session) Set(key string, value interface{}) error {
+	s.m.Lock()
+	defer s.m.Unlock()
 	if _, ok := s.Data[key]; ok {
 		return fmt.Errorf("key %s already exists, for replace delete it first", key)
 	}
@@ -51,6 +58,8 @@ func (s *Session) Set(key string, value interface{}) error {
 
 // Delete a value from session
 func (s *Session) Delete(key string) error {
+	s.m.Lock()
+	defer s.m.Unlock()
 	if _, ok := s.Data[key]; !ok {
 		return errors.New("key not found")
 	}
