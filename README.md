@@ -148,7 +148,7 @@ func main() {
 }
 ```
 
-# Example: Activated avoid expired sessions and set a expiration time in a session
+## Example: Activated avoid expired sessions and set a expiration time in a session
 
 By default, the session manager does not avoid expired sessions, so if you want to avoid expired sessions, you must activate it.
 
@@ -202,8 +202,8 @@ func main() {
 - [x] Get a session
 - [x] Delete a session
 - [x] Use concurrent map
-- [ ] Add a session expiration time
-- [ ] Add a active indicator
+- [x] Add a session expiration time
+- [x] Add a active indicator
 
 # License
 MIT License
