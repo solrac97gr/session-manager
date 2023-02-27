@@ -5,9 +5,7 @@
 [![codecov](https://codecov.io/gh/solrac97gr/session-manager/branch/main/graph/badge.svg)](https://codecov.io/gh/solrac97gr/session-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This is a simple session manager for a go application. For example, you can use it to manage the user's login status.
-
-Helps to manage user login information in the standard library of go. A lots of frameworks have their own session management, but some times I ue the standard library of go, so I write this package.
+This is a simple session manager for a go application. Helps you to store information of user and manage it, set a expiration time and set a default session of a group of different sessions created.
 
 # Documentation
 
